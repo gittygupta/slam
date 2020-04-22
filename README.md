@@ -4,6 +4,5 @@ Simplest implementation of Simultaneous Localisation and Mapping using-
 2.  Pangolin for 3D mapping 
 3.  g2o (python) for optimisation of mapping [TBD]
 
-Will keep updating.
-
+Will keep updating. \n
 Check commits for history
