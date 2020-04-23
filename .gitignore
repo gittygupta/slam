@@ -2,6 +2,7 @@ __pycache__
 tmp
 build
 pip-log.txt
+debug.txt
 bin
 .pybuilder
 .ipynb_checkpoints
