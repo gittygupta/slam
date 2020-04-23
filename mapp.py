@@ -99,7 +99,7 @@ class Map(object):
         
         self.scam = pangolin.OpenGlRenderState(
                 pangolin.ProjectionMatrix(w, h, 420, 420, w//2, h//2, 0.2, 10000),
-                pangolin.ModelViewLookAt(0, -10, -5,   # position behind car
+                pangolin.ModelViewLookAt(0, -10, -8,   # position behind car
                                          0, 0, 0,       # look at (0, 0, 0)
                                          0, -1, 0))
         self.handler = pangolin.Handler3D(self.scam)
@@ -118,17 +118,17 @@ class Map(object):
         spts = np.array(self.state[1])
     
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glClearColor(0.0, 0.0, 0.0, 0.0)     # background
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)     # background
         self.dcam.Activate(self.scam)
 
-        # draw poses of car
+        # draw poses
         gl.glColor3f(0.0, 1.0, 0.0) 
         pangolin.DrawCameras(self.state[0])
 
         # draw keypoints
-        gl.glPointSize(2)
+        gl.glPointSize(4)
         gl.glColor3f(1.0, 1.0, 1.0)     # color
-        pangolin.DrawPoints(self.state[1])
+        pangolin.DrawPoints(self.state[1], self.state[2])
         
         pangolin.FinishFrame()
     
@@ -136,23 +136,25 @@ class Map(object):
     def display_map(self):
         if self.q is None:
             return
-        poses, pts = [], []
+        poses, pts, colors = [], [], []
         for f in self.frames:
             poses.append(f.pose)
         for p in self.points:
             pts.append(p.location)
+            colors.append(p.color)
         #self.state = poses, pts
         #self.viewer_loop()
-        self.q.put((np.array(poses), np.array(pts)))
+        self.q.put((np.array(poses), np.array(pts), np.array(colors)/256.0))
 
 
 class Point(object):
     # A point is a 3D point in the world
     # Each point appears on multiple frames
-    def __init__(self, mapp, loc):
+    def __init__(self, mapp, loc, color):
         self.frames = []
         self.location = loc     #pt
         self.idxs = []
+        self.color = np.copy(color)
     
         self.id = len(mapp.points)
         mapp.points.append(self)

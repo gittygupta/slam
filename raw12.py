@@ -1,3 +1,5 @@
+# Added colors to points
+
 import cv2
 import numpy as np
 from skimage.measure import ransac
@@ -74,7 +76,12 @@ def process(image):
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:
             continue
-        pt = Point(mapp, p)
+        
+        # Adding color
+        u, v = int(f1.kpus[idx1[i], [0]]), int(f1.kpus[idx1[i], [1]])
+        color = image[v][u]
+        
+        pt = Point(mapp, p, color)
         pt.add_observation(f1, idx1[i])
         pt.add_observation(f2, idx2[i])
     
