@@ -1,8 +1,11 @@
+from multiprocessing import Process, Queue
+from frame import poseRt
+
 import numpy as np
 import OpenGL.GL as gl
 import pangolin
 import g2o
-from multiprocessing import Process, Queue
+
  
 class Map(object):
     def __init__(self):
@@ -25,16 +28,11 @@ class Map(object):
 
         # add frames to graph
         for f in self.frames:
-            '''
-            v_se3 = g2o.VertexSE3Expmap()
-            v_se3.set_id(f.id)
-            se3 = g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[0:3, 3])
-            v_se3.set_estimate(se3)
-            v_se3.set_fixed(f.id == 0)
-            opt.add_vertex(v_se3)'''
-
-            sbacam = g2o.SBACam(g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[0:3, 3]))
-            sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
+            pose = f.pose
+            #pose = np.linalg.inv(pose)
+            sbacam = g2o.SBACam(g2o.SE3Quat(pose[0:3, 0:3], pose[0:3, 3]))
+            #sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
+            sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
@@ -43,9 +41,10 @@ class Map(object):
             opt.add_vertex(v_se3)
 
         # add points to frame
+        PT_ID_OFFSET = 0x10000
         for p in self.points:
             pt = g2o.VertexSBAPointXYZ()
-            pt.set_id(p.id + 0x10000)
+            pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.location[0:3])
             pt.set_marginalized(True)
             opt.add_vertex(pt)
@@ -62,9 +61,21 @@ class Map(object):
         
         # init g2o optimizer
         opt.initialize_optimization()
-        #opt.set_verbose(True)
-
+        opt.set_verbose(True)
         opt.optimize(20)
+
+        # Put frames back
+        for f in self.frames:
+            est = opt.vertex(f.id).estimate()
+            R = est.rotation().matrix()
+            t = est.translation()
+            f.pose = poseRt(R, t)
+        
+        # Put points back
+        for p in self.points:
+            est = opt.vertex(p.id + PT_ID_OFFSET).estimate()
+            p.location = np.array(est)
+
 
     ## ** viewer ** ##        
 
