@@ -8,12 +8,17 @@ magenta = (255, 0, 255)
 cyan = (255, 255, 0)
 
 # Global Variables
-IRt = np.eye(4)
  
 # Utility functions
 def add_ones(x):
     return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
  
+def poseRt(R, t):
+    ret = np.eye(4)
+    ret[:3, :3] = R
+    ret[:3, 3] = t
+    return ret
+
 # pose
 def extractRt(E):
     # E -> Essential Matrix
@@ -27,11 +32,7 @@ def extractRt(E):
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
-    ret = np.eye(4)
-    ret[:3, :3] = R
-    ret[:3, 3] = t
-    Rt = np.concatenate([R, t.reshape(3, 1)], axis=1)
-    return ret
+    return poseRt(R, t)
  
 def normalise(Kinv, pts):
     return np.dot(Kinv, add_ones(pts).T).T[:, 0:2]
@@ -63,7 +64,7 @@ def match_frames(f1, f2):
             '''
             p1 = f1.kps[m.queryIdx]
             p2 = f2.kps[m.trainIdx]
-            # fix error
+            
             # travel less than 10% of diagonal and be within orb distance 32
             if np.linalg.norm((p1 - p2)) < 0.1 * np.linalg.norm([f1.w, f1.h]) and m.distance < 32:
                 # keep indices
@@ -112,7 +113,7 @@ def extract(frame):
     
 class Frame(object):
     def __init__(self, mapp, image, K):
-        self.pose = IRt
+        self.pose = np.eye(4)
         self.K = K
         self.Kinv = np.linalg.inv(self.K)
         self.scale = 2
