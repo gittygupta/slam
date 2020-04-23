@@ -1,6 +1,7 @@
 import numpy as np
 import OpenGL.GL as gl
 import pangolin
+import g2o
 from multiprocessing import Process, Queue
  
 class Map(object):
@@ -9,6 +10,63 @@ class Map(object):
         self.points = []
         self.state = None
         self.q = None
+
+    ## ** optimizer ** ##
+
+    def optimize(self):
+
+        # create g2o optimiser
+        opt = g2o.SparseOptimizer()
+        solver = g2o.BlockSolverSE3(g2o.LinearSolverCSparseSE3())
+        solver = g2o.OptimizationAlgorithmLevenberg(solver)
+        opt.set_algorithm(solver)
+
+        robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))   # mse
+
+        # add frames to graph
+        for f in self.frames:
+            '''
+            v_se3 = g2o.VertexSE3Expmap()
+            v_se3.set_id(f.id)
+            se3 = g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[0:3, 3])
+            v_se3.set_estimate(se3)
+            v_se3.set_fixed(f.id == 0)
+            opt.add_vertex(v_se3)'''
+
+            sbacam = g2o.SBACam(g2o.SE3Quat(f.pose[0:3, 0:3], f.pose[0:3, 3]))
+            sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
+
+            v_se3 = g2o.VertexCam()
+            v_se3.set_id(f.id)
+            v_se3.set_estimate(sbacam)
+            v_se3.set_fixed(f.id == 0)
+            opt.add_vertex(v_se3)
+
+        # add points to frame
+        for p in self.points:
+            pt = g2o.VertexSBAPointXYZ()
+            pt.set_id(p.id + 0x10000)
+            pt.set_estimate(p.location[0:3])
+            pt.set_marginalized(True)
+            opt.add_vertex(pt)
+
+            for f in p.frames:
+                edge = g2o.EdgeSE3ProjectXYZ()
+                edge.set_vertex(0, pt)
+                edge.set_vertex(1, opt.vertex(f.id))
+                kp = f.kps[f.pts.index(p)]
+                edge.set_measurement(kp)
+                edge.set_information(np.eye(2))
+                edge.set_robust_kernel(robust_kernel)
+                opt.add_edge(edge)
+        
+        # init g2o optimizer
+        opt.initialize_optimization()
+        #opt.set_verbose(True)
+
+        opt.optimize(20)
+
+    ## ** viewer ** ##        
 
     def create_viewer(self):
         self.q = Queue()
