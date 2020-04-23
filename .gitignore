@@ -3,6 +3,5 @@ build
 pip-log.txt
 .pybuilder
 .ipynb_checkpoints
-ipython_config.py
 .env
 .venv
