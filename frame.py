@@ -20,12 +20,14 @@ def poseRt(R, t):
     return ret
 
 # pose
-def extractRt(E):
+def extractRt(F):
     # E -> Essential Matrix
     # F -> Fundamental Matrix
     W = np.mat([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=float)
-    U, d, Vt = np.linalg.svd(E)
-    assert np.linalg.det(U) > 0
+    U, d, Vt = np.linalg.svd(F)
+    '''assert np.linalg.det(U) > 0
+    if np.linalg.det(Vt) < 0:
+        Vt *= -1.0'''
     if np.linalg.det(Vt) < 0:
         Vt *= -1.0
     R = np.dot(np.dot(U, W), Vt)
@@ -118,10 +120,10 @@ class Frame(object):
         self.Kinv = np.linalg.inv(self.K)
         self.scale = 2
 
-        self.w, self.h = image.shape[0:2]
+        self.h, self.w = image.shape[0:2]
     
-        kps, self.des = extract(image)
-        self.kps = normalise(self.Kinv, kps)
+        self.kpus, self.des = extract(image)
+        self.kps = normalise(self.Kinv, self.kpus)
         self.pts = [None] * len(self.kps)
     
         self.id = len(mapp.frames)

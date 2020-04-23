@@ -20,7 +20,7 @@ class Map(object):
 
         # create g2o optimiser
         opt = g2o.SparseOptimizer()
-        solver = g2o.BlockSolverSE3(g2o.LinearSolverCSparseSE3())
+        solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
         solver = g2o.OptimizationAlgorithmLevenberg(solver)
         opt.set_algorithm(solver)
 
@@ -31,13 +31,13 @@ class Map(object):
             pose = f.pose
             #pose = np.linalg.inv(pose)
             sbacam = g2o.SBACam(g2o.SE3Quat(pose[0:3, 0:3], pose[0:3, 3]))
-            #sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[2][0], f.K[2][1], 1.0)
-            sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
+            sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2], 1.0)
+            #sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
             v_se3.set_estimate(sbacam)
-            v_se3.set_fixed(f.id == 0)
+            v_se3.set_fixed(f.id <= 1)
             opt.add_vertex(v_se3)
 
         # add points to frame
@@ -47,13 +47,14 @@ class Map(object):
             pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.location[0:3])
             pt.set_marginalized(True)
+            pt.set_fixed(False)
             opt.add_vertex(pt)
 
             for f in p.frames:
-                edge = g2o.EdgeSE3ProjectXYZ()
+                edge = g2o.EdgeProjectP2MC()
                 edge.set_vertex(0, pt)
                 edge.set_vertex(1, opt.vertex(f.id))
-                kp = f.kps[f.pts.index(p)]
+                kp = f.kpus[f.pts.index(p)]
                 edge.set_measurement(kp)
                 edge.set_information(np.eye(2))
                 edge.set_robust_kernel(robust_kernel)
@@ -62,7 +63,7 @@ class Map(object):
         # init g2o optimizer
         opt.initialize_optimization()
         opt.set_verbose(True)
-        opt.optimize(20)
+        opt.optimize(50)
 
         # Put frames back
         for f in self.frames:
