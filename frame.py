@@ -67,10 +67,17 @@ def match_frames(f1, f2):
             # travel less than 10% of diagonal and be within orb distance 32
             if np.linalg.norm((p1 - p2)) < 0.1 * np.linalg.norm([f1.w, f1.h]) and m.distance < 32:
                 # keep indices
-                idx1.append(m.queryIdx)
-                idx2.append(m.trainIdx)
+                # TODO
+                if m.queryIdx not in idx1 and m.trainIdx not in idx2 : 
+                    idx1.append(m.queryIdx)
+                    idx2.append(m.trainIdx)
                 
-                ret.append((p1, p2))
+                    ret.append((p1, p2))
+
+    # no duplicates (duplicates cause problems with optimization)
+    assert(len(set(idx1))) == len(idx1)
+    assert(len(set(idx2))) == len(idx2)
+
 
     assert len(ret) >= 8
     ret = np.array(ret)
