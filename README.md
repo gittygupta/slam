@@ -7,3 +7,8 @@ Simplest implementation of Simultaneous Localisation and Mapping using-
 Will keep updating. Check commits for history.
 
 Might encounter Cholesky errors in certain iterations but it fixes itself. Currently usably fast.
+
+### TODO:
+1. Add search by projections
+2. Remove Essential matrix once tracked
+3. Add kinemtic model, becomes shitty later on. Fine initially though.
