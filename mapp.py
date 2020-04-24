@@ -29,27 +29,25 @@ class Map(object):
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))   # mse
 
-        #local_frames = self.frames[-LOCAL_WINDOW:]
+        local_frames = self.frames[-10:]
 
         # add frames to graph
         for f in self.frames:
             pose = f.pose
-            #pose = np.linalg.inv(pose)
             sbacam = g2o.SBACam(g2o.SE3Quat(pose[0:3, 0:3], pose[0:3, 3]))
             sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2], 1.0)
-            #sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
             v_se3.set_estimate(sbacam)
-            v_se3.set_fixed(f.id <= 1)
+            v_se3.set_fixed(f.id <= 1 or f not in local_frames)
             opt.add_vertex(v_se3)
 
         # add points to frame
         PT_ID_OFFSET = 0x10000
         for p in self.points:
-            #if not any([f in local_frames for f in p.frames]):
-            #    continue
+            if not any([f in local_frames for f in p.frames]):
+                continue
             pt = g2o.VertexSBAPointXYZ()
             pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.location[0:3])
@@ -74,25 +72,27 @@ class Map(object):
 
         # Put frames back
         for f in self.frames:
-            optf = opt.vertex(f.id)
-            est = optf.estimate()
+            est = opt.vertex(f.id).estimate()
             R = est.rotation().matrix()
             t = est.translation()
             f.pose = poseRt(R, t)
         
-        # Put points back
+        # Put points back and cull
         new_points = []
         for p in self.points:
             vert = opt.vertex(p.id + PT_ID_OFFSET)
-            #if vert is None:
-            #    new_points.append(p)
-            #    continue
+            if vert is None:
+                new_points.append(p)
+                continue
             est = vert.estimate()
 
             # 2 match points
             #old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
             old_point = len(p.frames) == 2 and p.frames[-1].id < (len(self.frames) - 10)
-            
+            #if old_point:
+            #    p.delete()
+            #    continue
+
             # compute reprojection error
             errors = []
             for f in p.frames:
@@ -102,6 +102,7 @@ class Map(object):
                 errors.append(np.linalg.norm(proj - kp))
             
             # cull
+            #if (len(p.frames) == 2 and np.mean(errors) > 20) or np.mean(errors) > 100:
             if (old_point and np.mean(errors) > 30) or np.mean(errors) > 100:
                 p.delete()
                 continue
