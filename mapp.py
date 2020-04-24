@@ -6,6 +6,8 @@ import OpenGL.GL as gl
 import pangolin
 import g2o
 
+#LOCAL_WINDOW = 20
+
  
 class Map(object):
     def __init__(self):
@@ -13,6 +15,7 @@ class Map(object):
         self.points = []
         self.state = None
         self.q = None
+        self.max_point = 0
 
     ## ** optimizer ** ##
 
@@ -25,6 +28,8 @@ class Map(object):
         opt.set_algorithm(solver)
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))   # mse
+
+        #local_frames = self.frames[-LOCAL_WINDOW:]
 
         # add frames to graph
         for f in self.frames:
@@ -43,6 +48,8 @@ class Map(object):
         # add points to frame
         PT_ID_OFFSET = 0x10000
         for p in self.points:
+            #if not any([f in local_frames for f in p.frames]):
+            #    continue
             pt = g2o.VertexSBAPointXYZ()
             pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.location[0:3])
@@ -62,20 +69,50 @@ class Map(object):
         
         # init g2o optimizer
         opt.initialize_optimization()
-        opt.set_verbose(True)
+        #opt.set_verbose(True)
         opt.optimize(50)
 
         # Put frames back
         for f in self.frames:
-            est = opt.vertex(f.id).estimate()
+            optf = opt.vertex(f.id)
+            est = optf.estimate()
             R = est.rotation().matrix()
             t = est.translation()
             f.pose = poseRt(R, t)
         
         # Put points back
+        new_points = []
         for p in self.points:
-            est = opt.vertex(p.id + PT_ID_OFFSET).estimate()
+            vert = opt.vertex(p.id + PT_ID_OFFSET)
+            #if vert is None:
+            #    new_points.append(p)
+            #    continue
+            est = vert.estimate()
+
+            # 2 match points
+            #old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
+            old_point = len(p.frames) == 2 and p.frames[-1].id < (len(self.frames) - 10)
+            
+            # compute reprojection error
+            errors = []
+            for f in p.frames:
+                kp = f.kpus[f.pts.index(p)]
+                proj = np.dot(f.K, est)
+                proj = proj[0:2] / proj[2]
+                errors.append(np.linalg.norm(proj - kp))
+            
+            # cull
+            if (old_point and np.mean(errors) > 30) or np.mean(errors) > 100:
+                p.delete()
+                continue
+
             p.location = np.array(est)
+            new_points.append(p)
+            
+        self.points = new_points
+
+        #print('Units of error : %d' % opt.chi2())
+        return opt.chi2()
 
 
     ## ** viewer ** ##        
@@ -156,8 +193,14 @@ class Point(object):
         self.idxs = []
         self.color = np.copy(color)
     
-        self.id = len(mapp.points)
+        self.id = mapp.max_point
+        mapp.max_point += 1
         mapp.points.append(self)
+
+    def delete(self):
+        for f in self.frames:
+            f.pts[f.pts.index(self)] = None
+        del self
     
     def add_observation(self, frame, idx):
         # frame -> the whole frame
