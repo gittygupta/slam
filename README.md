@@ -12,3 +12,4 @@ Might encounter Cholesky errors in certain iterations but it fixes itself. Curre
 1. Add search by projections
 2. Remove Essential matrix once tracked
 3. Add kinemtic model, becomes shitty later on. Fine initially though.
+4. Add g2o optimization only to latest pose and not all the previous ones, which probably makes it slower and worse in the future.
