@@ -101,7 +101,8 @@ class Map(object):
             errors = []
             for f in p.frames:
                 kp = f.kpus[f.pts.index(p)]
-                proj = np.dot(f.K, est)
+                proj = np.dot(np.dot(f.K, np.linalg.inv(f.pose)[:3]), 
+                              np.array([est[0], est[1], est[2], 1.0]))
                 proj = proj[0:2] / proj[2]
                 errors.append(np.linalg.norm(proj - kp))
             

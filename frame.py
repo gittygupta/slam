@@ -105,7 +105,7 @@ def extract(frame):
     
     # Detection
     features = cv2.goodFeaturesToTrack(np.mean(frame, axis=2).astype(np.uint8),
-            maxCorners=1000, qualityLevel=0.01, minDistance=7)
+            maxCorners=3000, qualityLevel=0.01, minDistance=7)
     
     # Extraction
     kp = [cv2.KeyPoint(x = f[0][0], y = f[0][1], _size=20) for f in features]

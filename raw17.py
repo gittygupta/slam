@@ -139,8 +139,9 @@ print('Vary F if required ')
 
 if REVERSE == 'y' or REVERSE == 'Y':
     # play backward
-    cap = cv2.VideoCapture('videos/test_vid4.mp4')
+    cap = cv2.VideoCapture('videos/test_vid1.mp4')
     frame_idx = cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    print(frame_idx)
     while(cap.isOpened() and frame_idx >= 0):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
         frame_idx -= 1
@@ -155,7 +156,7 @@ if REVERSE == 'y' or REVERSE == 'Y':
 
 else:
     # play forward
-    cap = cv2.VideoCapture('videos/test_vid4.mp4')
+    cap = cv2.VideoCapture('videos/test_vid1.mp4')
     while(cap.isOpened()):
         ret, frame = cap.read()
         if not ret:
