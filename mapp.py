@@ -6,7 +6,7 @@ import OpenGL.GL as gl
 import pangolin
 import g2o
 
-#LOCAL_WINDOW = 20
+LOCAL_WINDOW = 20
 
  
 class Map(object):
@@ -29,7 +29,7 @@ class Map(object):
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))   # mse
 
-        local_frames = self.frames[-10:]
+        local_frames = self.frames[-LOCAL_WINDOW:]
 
         # add frames to graph
         for f in self.frames:
@@ -87,8 +87,8 @@ class Map(object):
             est = vert.estimate()
 
             # 2 match points
-            #old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
-            old_point = len(p.frames) == 2 and p.frames[-1].id < (len(self.frames) - 10)
+            old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
+            #old_point = len(p.frames) == 2 and p.frames[-1].id < (len(self.frames) - 10)
             #if old_point:
             #    p.delete()
             #    continue

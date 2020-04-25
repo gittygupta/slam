@@ -33,7 +33,8 @@ def extractRt(F):
     R = np.dot(np.dot(U, W), Vt)
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)
-    t = U[:, 2]
+    t = U[:, 2]     # forward
+    t = -U[:, 2]     # backward
     return poseRt(R, t)
  
 def normalise(Kinv, pts):

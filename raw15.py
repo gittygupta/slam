@@ -57,6 +57,7 @@ def process(image):
     # Match
     f1 = mapp.frames[-1]
     f2 = mapp.frames[-2]
+
     idx1, idx2, Rt = match_frames(f1, f2)
     f1.pose = np.dot(Rt, f2.pose)
 
@@ -64,16 +65,24 @@ def process(image):
         if f2.pts[idx] is not None:
             f2.pts[idx].add_observation(f1, idx1[i])
 
+    good_pts4d = np.array([f1.pts[i] is None for i in idx1])
+
     # Homogeneous 3D coords
     pts4d = triangulate(f1.pose, f2.pose,
             f1.kps[idx1], f2.kps[idx2])
+    good_pts4d &= np.abs(pts4d[:, 3]) > 0.005
     pts4d /= pts4d[:, 3:]
     
     # Reject some points without enough parallax
-    unmatched_points = np.array([f1.pts[i] is None for i in idx1])
-    print('Adding ' + str(np.sum(unmatched_points)) + ' points')
-    good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
+    #unmatched_points = np.array([f1.pts[i] is None for i in idx1])
+    #print('Adding ' + str(np.sum(unmatched_points)) + ' points')
+    #good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
     
+    pts4d_lp = np.dot(np.linalg.inv(f1.pose), pts4d.T).T
+    good_pts4d &= pts4d_lp[:, 2] > 0
+
+    print('Adding ' + str(np.sum(good_pts4d)) + ' points')
+
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:
             continue
@@ -110,8 +119,9 @@ def process(image):
 
 
 print('Vary F if required ')
- 
-cap = cv2.VideoCapture('videos/test_vid1.mp4')
+'''
+# play forward
+cap = cv2.VideoCapture('videos/test_vid4.mp4')
 while(cap.isOpened()):
     ret, frame = cap.read()
     if not ret:
@@ -121,6 +131,19 @@ while(cap.isOpened()):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 cv2.destroyAllWindows()
+''' 
  
- 
-
+# play backward
+cap = cv2.VideoCapture('videos/test_vid4.mp4')
+frame_idx = cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+while(cap.isOpened() and frame_idx >= 0):
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+    frame_idx -= 1
+    ret, frame = cap.read()
+    if not ret:
+        cv2.waitKey(3000)
+        break
+    process(frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cv2.destroyAllWindows()
