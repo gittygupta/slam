@@ -17,9 +17,16 @@ W = 854
 H = 480
  
 # Environment variables
-F = int(args[1])
+F = args[1]
 PATH = args[2]
 REVERSE = args[3]
+
+if '=' in F:
+    F = int(F.split('=')[-1])
+if '=' in PATH:
+    PATH = PATH.split('=')[-1]
+if '=' in REVERSE:
+    REVERSE = REVERSE.split('=')[-1]
 
 # Global Variables
 K = np.array(([F, 0, W // 2], [0, F, H // 2], [0, 0, 1]))
