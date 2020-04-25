@@ -16,3 +16,5 @@ Might encounter Cholesky errors in certain iterations but it fixes itself. Curre
 5. Add optimizer for F (different for different videos)
 6. check is points are in the FOV of the camera
 7. Improve to not need 'REVERSE' check in os env
+
+Will add environment variables to switch between backward and forward SLAM. And, to add custom videos too, and adjustable focal length of camera.
