@@ -11,14 +11,21 @@ Will keep updating. Check commits for history.
 Might encounter Cholesky errors in certain iterations but it fixes itself. Currently usably fast.
 
 ### TODO:
-1. Add search by projections
-2. Remove Essential matrix once tracked
-3. Add kinemtic model, becomes shitty later on. Fine initially though.
-4. Add g2o optimization only to latest pose and not all the previous ones, which probably makes it slower and worse in the future.
-5. Add optimizer for F (different for different videos)
-6. check is points are in the FOV of the camera
-7. Improve to not need 'REVERSE' check in os env
+1. Add kinemtic model, becomes shitty later on. Fine initially though.
+2. Add g2o optimization only to latest pose and not all the previous ones, which probably makes it slower and worse in the future.
+3. Add optimizer for Focal length (different for different camera lens)
 
-Will add environment variables to switch between backward and forward SLAM. And, to add custom videos too, and adjustable focal length of camera.
+Currently focal length needs to be passed the parameter F in bash shell along with the user's video directory. Moreover, a 'yes' or 'no' parameter has to be passed depending on the user's requirement of using a reverse SLAM.
 
+example command : 
+```
+python3 slam.py F=500 PATH=videos/reversed.mp4 REVERSE=n
+```
+OR,
+
+```
+python3 slam.py 500 videos/reversed.mp4 n
+```
+
+To exit the program press 'q' on the 'frames' window.
 
