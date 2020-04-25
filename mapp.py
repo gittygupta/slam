@@ -7,8 +7,6 @@ import pangolin
 import g2o
 
 LOCAL_WINDOW = 20
-#LOCAL_WINDOW = None
-
  
 class Map(object):
     def __init__(self):
@@ -92,10 +90,6 @@ class Map(object):
 
             # 2 match points
             old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
-            #old_point = len(p.frames) == 2 and p.frames[-1].id < (len(self.frames) - 10)
-            #if old_point:
-            #    p.delete()
-            #    continue
 
             # compute reprojection error
             errors = []
@@ -105,19 +99,12 @@ class Map(object):
                               np.array([est[0], est[1], est[2], 1.0]))
                 proj = proj[0:2] / proj[2]
                 errors.append(np.linalg.norm(proj - kp))
-            
-            # cull
-            #if (len(p.frames) == 2 and np.mean(errors) > 20) or np.mean(errors) > 100:
-            #if (old_point and np.mean(errors) > 30) or np.mean(errors) > 100:
-            #    p.delete()
-            #    continue
 
             p.location = np.array(est)
             new_points.append(p)
             
         self.points = new_points
 
-        #print('Units of error : %d' % opt.chi2())
         return opt.chi2()
 
 
@@ -154,7 +141,7 @@ class Map(object):
     
         self.darr = None
     
-    def viewer_loop(self, q):      # viewer_refresh()
+    def viewer_loop(self, q):
         if self.state is None or not q.empty():
             self.state = q.get()
     
@@ -170,7 +157,7 @@ class Map(object):
 
         # draw keypoints
         gl.glPointSize(4)
-        gl.glColor3f(1.0, 1.0, 1.0)     # color
+        gl.glColor3f(1.0, 1.0, 1.0)     # color point
         pangolin.DrawPoints(self.state[1], self.state[2])
         
         pangolin.FinishFrame()
@@ -185,17 +172,13 @@ class Map(object):
         for p in self.points:
             pts.append(p.location)
             colors.append(p.color)
-        #self.state = poses, pts
-        #self.viewer_loop()
         self.q.put((np.array(poses), np.array(pts), np.array(colors)/256.0))
 
 
 class Point(object):
-    # A point is a 3D point in the world
-    # Each point appears on multiple frames
     def __init__(self, mapp, loc, color):
         self.frames = []
-        self.location = loc     #pt
+        self.location = loc
         self.idxs = []
         self.color = np.copy(color)
     
@@ -209,7 +192,6 @@ class Point(object):
         del self
     
     def add_observation(self, frame, idx):
-        # frame -> the whole frame
         # idx -> index of which descriptor the point is in the frame
         frame.pts[idx] = self
         self.frames.append(frame)

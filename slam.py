@@ -1,25 +1,25 @@
-# Added colors to points
-
 import cv2
+import sys
 import numpy as np
 from skimage.measure import ransac
 from skimage.transform import FundamentalMatrixTransform, EssentialMatrixTransform
 from frame import Frame, denormalise, match_frames
 from mapp import Map, Point
 
-# Reverse
-REVERSE = input('Reverse? : ')
+args = sys.argv
  
 # Colors
 magenta = (255, 0, 255)
 cyan = (255, 255, 0)
 
-# Camera insintrics
+# Camera insintrics (settable)
 W = 854
 H = 480
  
-# Focal Length
-F = 500     # varies for videos, make it a parameter
+# Environment variables
+F = int(args[1])
+PATH = args[2]
+REVERSE = args[3]
 
 # Global Variables
 K = np.array(([F, 0, W // 2], [0, F, H // 2], [0, 0, 1]))
@@ -54,7 +54,7 @@ def triangulate(pose1, pose2, pts1, pts2):
 def process(image):
     image = cv2.resize(image, (W, H))
     frame = Frame(mapp, image, K)
-    if frame.id == 0:       # i.e just the start frame
+    if frame.id == 0:
         return
     
     # Match
@@ -80,22 +80,8 @@ def process(image):
     pts_tri_local /= pts_tri_local[:, 3:]
     good_pts4d &= pts_tri_local[:, 2] > 0
 
-    # Homogeneous 3D coords
-    #pts4d = triangulate(f1.pose, f2.pose,
-    #        f1.kps[idx1], f2.kps[idx2])
-    #good_pts4d &= np.abs(pts4d[:, 3]) > 0.005
-    #pts4d /= pts4d[:, 3:]
-
     # project into world
     pts4d = np.dot(np.linalg.inv(f1.pose), pts_tri_local.T).T
-    
-    #unmatched_points = np.array([f1.pts[i] is None for i in idx1])
-    #print('Adding ' + str(np.sum(unmatched_points)) + ' points')
-    #good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
-    
-    #pts4d_lp = np.dot(np.linalg.inv(f1.pose), pts4d.T).T
-    #pts4d_lp = np.dot(f1.pose, pts4d.T).T
-    #good_pts4d &= pts4d_lp[:, 2] > 0
 
     print('Adding ' + str(np.sum(good_pts4d)) + ' points')
 
@@ -133,13 +119,9 @@ def process(image):
     mapp.display_map()
 
 
-
-print('Vary F if required ')
-
-
 if REVERSE == 'y' or REVERSE == 'Y':
     # play backward
-    cap = cv2.VideoCapture('videos/test_vid1.mp4')
+    cap = cv2.VideoCapture(PATH)
     frame_idx = cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
     print(frame_idx)
     while(cap.isOpened() and frame_idx >= 0):
@@ -156,7 +138,7 @@ if REVERSE == 'y' or REVERSE == 'Y':
 
 else:
     # play forward
-    cap = cv2.VideoCapture('videos/test_vid1.mp4')
+    cap = cv2.VideoCapture(PATH)
     while(cap.isOpened()):
         ret, frame = cap.read()
         if not ret:
@@ -166,4 +148,3 @@ else:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
-    

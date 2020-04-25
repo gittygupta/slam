@@ -25,9 +25,6 @@ def extractRt(F):
     # F -> Fundamental Matrix
     W = np.mat([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=float)
     U, d, Vt = np.linalg.svd(F)
-    '''assert np.linalg.det(U) > 0
-    if np.linalg.det(Vt) < 0:
-        Vt *= -1.0'''
     if np.linalg.det(Vt) < 0:
         Vt *= -1.0
     R = np.dot(np.dot(U, W), Vt)
@@ -55,30 +52,18 @@ def match_frames(f1, f2):
     
     for m,n in matches:
         if m.distance < 0.75*n.distance:
-            '''
-            # keep indices
-            idx1.append(m.queryIdx)
-            idx2.append(m.trainIdx)
-            
-            p1 = f1.features[m.queryIdx]
-            p2 = f2.features[m.trainIdx]
-
-            ret.append((p1, p2))
-            '''
             p1 = f1.kps[m.queryIdx]
             p2 = f2.kps[m.trainIdx]
             
             # travel less than 10% of diagonal and be within orb distance 32
             if np.linalg.norm((p1 - p2)) < 0.1 * np.linalg.norm([f1.w, f1.h]) and m.distance < 32:
-                # keep indices
-                # TODO
                 if m.queryIdx not in idx1 and m.trainIdx not in idx2 : 
                     idx1.append(m.queryIdx)
                     idx2.append(m.trainIdx)
                 
                     ret.append((p1, p2))
 
-    # no duplicates (duplicates cause problems with optimization)
+    # no duplicates
     assert(len(set(idx1))) == len(idx1)
     assert(len(set(idx2))) == len(idx2)
 
@@ -93,7 +78,6 @@ def match_frames(f1, f2):
                             FundamentalMatrixTransform,
                             #EssentialMatrixTransform,
                             min_samples=8,
-                            #residual_threshold=0.01,
                             residual_threshold=0.001,
                             max_trials=100)
     Rt = extractRt(model.params)
@@ -129,6 +113,3 @@ class Frame(object):
     
         self.id = len(mapp.frames)
         mapp.frames.append(self)
- 
- 
-
