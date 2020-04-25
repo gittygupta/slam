@@ -7,6 +7,7 @@ import pangolin
 import g2o
 
 LOCAL_WINDOW = 20
+#LOCAL_WINDOW = None
 
  
 class Map(object):
@@ -29,7 +30,10 @@ class Map(object):
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))   # mse
 
-        local_frames = self.frames[-LOCAL_WINDOW:]
+        if LOCAL_WINDOW is None:
+            local_frames = self.frames
+        else:
+            local_frames = self.frames[-LOCAL_WINDOW:]
 
         # add frames to graph
         for f in self.frames:
@@ -103,9 +107,9 @@ class Map(object):
             
             # cull
             #if (len(p.frames) == 2 and np.mean(errors) > 20) or np.mean(errors) > 100:
-            if (old_point and np.mean(errors) > 30) or np.mean(errors) > 100:
-                p.delete()
-                continue
+            #if (old_point and np.mean(errors) > 30) or np.mean(errors) > 100:
+            #    p.delete()
+            #    continue
 
             p.location = np.array(est)
             new_points.append(p)

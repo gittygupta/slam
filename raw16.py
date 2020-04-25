@@ -6,6 +6,9 @@ from skimage.measure import ransac
 from skimage.transform import FundamentalMatrixTransform, EssentialMatrixTransform
 from frame import Frame, denormalise, match_frames
 from mapp import Map, Point
+
+# Reverse
+REVERSE = input('Reverse? : ')
  
 # Colors
 magenta = (255, 0, 255)
@@ -66,20 +69,33 @@ def process(image):
             f2.pts[idx].add_observation(f1, idx1[i])
 
     good_pts4d = np.array([f1.pts[i] is None for i in idx1])
+    
+    # points locally in front of the camera
+    # Reject some points without enough parallax
+    pts_tri_local = triangulate(Rt, np.eye(4), f1.kps[idx1], f2.kps[idx2])
+    good_pts4d &= np.abs(pts_tri_local[:, 3]) > 0.005
+
+    # Homogeneous 3D coordinates
+    # reject points behind the camera
+    pts_tri_local /= pts_tri_local[:, 3:]
+    good_pts4d &= pts_tri_local[:, 2] > 0
 
     # Homogeneous 3D coords
-    pts4d = triangulate(f1.pose, f2.pose,
-            f1.kps[idx1], f2.kps[idx2])
-    good_pts4d &= np.abs(pts4d[:, 3]) > 0.005
-    pts4d /= pts4d[:, 3:]
+    #pts4d = triangulate(f1.pose, f2.pose,
+    #        f1.kps[idx1], f2.kps[idx2])
+    #good_pts4d &= np.abs(pts4d[:, 3]) > 0.005
+    #pts4d /= pts4d[:, 3:]
+
+    # project into world
+    pts4d = np.dot(np.linalg.inv(f1.pose), pts_tri_local.T).T
     
-    # Reject some points without enough parallax
     #unmatched_points = np.array([f1.pts[i] is None for i in idx1])
     #print('Adding ' + str(np.sum(unmatched_points)) + ' points')
     #good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
     
-    pts4d_lp = np.dot(np.linalg.inv(f1.pose), pts4d.T).T
-    good_pts4d &= pts4d_lp[:, 2] > 0
+    #pts4d_lp = np.dot(np.linalg.inv(f1.pose), pts4d.T).T
+    #pts4d_lp = np.dot(f1.pose, pts4d.T).T
+    #good_pts4d &= pts4d_lp[:, 2] > 0
 
     print('Adding ' + str(np.sum(good_pts4d)) + ' points')
 
@@ -119,31 +135,34 @@ def process(image):
 
 
 print('Vary F if required ')
-'''
-# play forward
-cap = cv2.VideoCapture('videos/test_vid4.mp4')
-while(cap.isOpened()):
-    ret, frame = cap.read()
-    if not ret:
-        cv2.waitKey(3000)
-        break
-    process(frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cv2.destroyAllWindows()
-''' 
- 
-# play backward
-cap = cv2.VideoCapture('videos/test_vid4.mp4')
-frame_idx = cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
-while(cap.isOpened() and frame_idx >= 0):
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-    frame_idx -= 1
-    ret, frame = cap.read()
-    if not ret:
-        cv2.waitKey(3000)
-        break
-    process(frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cv2.destroyAllWindows()
+
+
+if REVERSE == 'y' or REVERSE == 'Y':
+    # play backward
+    cap = cv2.VideoCapture('videos/test_vid4.mp4')
+    frame_idx = cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    while(cap.isOpened() and frame_idx >= 0):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        frame_idx -= 1
+        ret, frame = cap.read()
+        if not ret:
+            cv2.waitKey(3000)
+            break
+        process(frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+
+else:
+    # play forward
+    cap = cv2.VideoCapture('videos/test_vid4.mp4')
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if not ret:
+            cv2.waitKey(3000)
+            break
+        process(frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    

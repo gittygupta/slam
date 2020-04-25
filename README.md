@@ -15,3 +15,4 @@ Might encounter Cholesky errors in certain iterations but it fixes itself. Curre
 4. Add g2o optimization only to latest pose and not all the previous ones, which probably makes it slower and worse in the future.
 5. Add optimizer for F (different for different videos)
 6. check is points are in the FOV of the camera
+7. Improve to not need 'REVERSE' check in os env
