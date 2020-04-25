@@ -4,6 +4,8 @@ Simplest implementation of Simultaneous Localisation and Mapping using-
 2.  Pangolin for 3D mapping 
 3.  g2o (python) for optimisation of mapping [Done. To be improved further]
 
+![output on a test video](https://github.com/gittygupta/slam/blob/master/output.png)
+
 Will keep updating. Check commits for history.
 
 Might encounter Cholesky errors in certain iterations but it fixes itself. Currently usably fast.
@@ -18,3 +20,5 @@ Might encounter Cholesky errors in certain iterations but it fixes itself. Curre
 7. Improve to not need 'REVERSE' check in os env
 
 Will add environment variables to switch between backward and forward SLAM. And, to add custom videos too, and adjustable focal length of camera.
+
+
