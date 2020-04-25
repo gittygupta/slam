@@ -29,3 +29,4 @@ python3 slam.py 500 videos/reversed.mp4 n
 
 To exit the program press 'q' on the 'frames' window.
 
+To install [Pangolin](https://github.com/uoip/pangolin) and [g2o](https://github.com/uoip/g2opy) follow the tutorial on their github repository. Make sure you have the dependencies that are listed, installed on your machine.
