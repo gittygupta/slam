@@ -25,7 +25,8 @@ To install [Pangolin](https://github.com/uoip/pangolin) and [g2o](https://github
 ### TODOS:
 1. Add kinemtic model, becomes shitty later on. Fine initially though.
 2. Add g2o optimization only to latest pose and not all the previous ones, which probably makes it slower and worse in the future.
-3. Add optimizer for Focal length (different for different camera lens)
+3. Add optimizer for Focal length (different for different camera lens).
+4. Deploy on Windows, Mac as well.
 
 Might encounter Cholesky errors in certain iterations but it fixes itself. Currently usably fast.
 
