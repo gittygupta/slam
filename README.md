@@ -10,12 +10,12 @@ The focal length needs to be passed as the parameter F in bash shell along with 
 
 example command : 
 ```
-python3 slam.py F=500 PATH=videos/reversed.mp4 REVERSE=n
+python3 slam.py F=500 PATH=videos/test_vid.mp4 REVERSE=n
 ```
 OR,
 
 ```
-python3 slam.py 500 videos/reversed.mp4 n
+python3 slam.py 500 videos/test_vid.mp4 n
 ```
 
 To exit the program press 'q' on the 'frames' window.
